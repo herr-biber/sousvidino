@@ -4,8 +4,8 @@
 #include <PID_v1.h>
 
 #define PIN_SSR 13
-#define PIN_GND 12 // for one wire
-#define PIN_VCC 11 // for one wire
+#define PIN_GND_ONEWIRE 12
+#define PIN_VCC_ONEWIRE 11
 #define PIN_TEMP 3
 #define MAX_POWER 50 // has to be smaller than 65535 cycles / 1250 prescaled timer cycles per ac period
 
@@ -123,10 +123,10 @@ void setup() {
   noInterrupts(); // cli()
 
   // GND and VCC for one wire temp sensor
-  pinMode(PIN_GND, OUTPUT);
-  digitalWrite(PIN_GND, LOW);
-  pinMode(PIN_VCC, OUTPUT);
-  digitalWrite(PIN_VCC, HIGH);
+  pinMode(PIN_GND_ONEWIRE, OUTPUT);
+  digitalWrite(PIN_GND_ONEWIRE, LOW);
+  pinMode(PIN_VCC_ONEWIRE, OUTPUT);
+  digitalWrite(PIN_VCC_ONEWIRE, HIGH);
 
   // set up Timer1
   TIMSK1 = 0x02;  // enable comparator A interrupt
