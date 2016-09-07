@@ -10,6 +10,41 @@
 #define PIN_TEMP 3
 #define MAX_POWER 50 // has to be smaller than 65535 cycles / 1250 prescaled timer cycles per ac period
 
+// for display/control (second row)
+#define CONTROL_STATE_SP 0
+#define CONTROL_STATE_P 1
+#define CONTROL_STATE_I 2
+#define CONTROL_STATE_D 3
+
+// button
+#define ANALOG_BUTTON_MIN_PRESS_TIME_MS 200
+#define ANALOG_BUTTON_PIN 0 // from lcd keypad shield
+int lastButtonPressTime = 0;
+
+#define btnRIGHT  0
+#define btnUP     1
+#define btnDOWN   2
+#define btnLEFT   3
+#define btnSELECT 4
+#define btnNONE   5
+
+// from https://www.dfrobot.com/wiki/index.php/Arduino_LCD_KeyPad_Shield_(SKU:_DFR0009)
+uint8_t read_LCD_button()
+{
+ int adc_key_in = analogRead(ANALOG_BUTTON_PIN);      // read the value from the sensor 
+
+ if (adc_key_in > 1000) return btnNONE;
+ // For V1.1 us this threshold
+ if (adc_key_in < 50)   return btnRIGHT;  
+ if (adc_key_in < 250)  return btnUP; 
+ if (adc_key_in < 450)  return btnDOWN; 
+ if (adc_key_in < 650)  return btnLEFT; 
+ if (adc_key_in < 850)  return btnSELECT;  
+
+ return btnNONE;  // when all others fail, return this...
+}
+
+
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);   // select the pins used on the LCD panel
 OneWire one_wire(PIN_TEMP);
 DallasTemperature sensors(&one_wire);
@@ -31,6 +66,10 @@ double kp = 30.0;
 double ki = 0.03;
 double kd = 0.0;
 
+uint8_t controlState = CONTROL_STATE_SP;
+static double * const controlValues[] = { &setpoint, &kp, &ki, &kd };
+static const double controlIncrements[] = { 0.5, 0.1, 0.001, 0.1 };
+static const char*  controlNames[] = { "SP", "P  ", "I  ", "D  " };
 
 PID pid(&input, &output, &setpoint, kp, ki, kd, DIRECT);
 
@@ -177,6 +216,27 @@ void loop() {
   
   int t = millis() - last_t;
   last_t = millis();
+
+  uint8_t button_value = read_LCD_button();
+  if(button_value != btnNONE) {
+    if(millis() - lastButtonPressTime > ANALOG_BUTTON_MIN_PRESS_TIME_MS) {
+      switch(button_value) {
+        case btnSELECT:
+          controlState += 1;
+          controlState %= 4;
+          break;
+        case btnUP:
+          *controlValues[controlState] += controlIncrements[controlState];
+          break;
+        case btnDOWN:
+          *controlValues[controlState] -= controlIncrements[controlState];
+          break;
+        default:
+          break;
+      }
+    }
+    lastButtonPressTime = millis();
+  }
   
   // get temperatures
 //  sensors.requestTemperatures(); // 766ms!/
@@ -259,28 +319,25 @@ void loop() {
   if(loop_it == 0) {
   
     // lcd
-    lcd.setCursor(0,1);
-    lcd.print("P   ");
-    lcd.setCursor(2,1);
-    lcd.print(power);
-  
     lcd.setCursor(0,0);
     lcd.print("PV ");
     lcd.setCursor(3,0);
-    lcd.print(t0);
-  
-    lcd.setCursor(8,0);
-    lcd.print("SP ");
-    lcd.setCursor(11,0);
-    lcd.print(setpoint);
-  
-    lcd.setCursor(8,1);
-    lcd.print("O ");
-    lcd.setCursor(10,1);
-    lcd.print(output);
-    lcd.setCursor(15,1);
-    lcd.print(autotune ? "+" : "-");
-  
+    lcd.print(t0, 2);
+
+    lcd.setCursor(10,0);
+    lcd.print("OUT");
+    lcd.setCursor(14,0);
+    {
+    char out_str[4];
+    sprintf(out_str, "%2d", p);
+    lcd.print(out_str);
+    }
+
+    // second line 
+    lcd.setCursor(0,1);
+    lcd.print(controlNames[controlState]);
+    lcd.setCursor(3,1);
+    lcd.print(*controlValues[controlState], 2);
   
     // serial out
     String out;
