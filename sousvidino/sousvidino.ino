@@ -341,7 +341,23 @@ void loop() {
     lcd.print(controlNames[controlState]);
     lcd.setCursor(3,1);
     lcd.print(*controlValues[controlState], 2);
-  
+
+    // time
+    unsigned long sec = millis() / 1000;
+    unsigned long minutes = sec / 60;
+    sec %= 60;
+
+    char sec_str[3];
+    sprintf(sec_str, "%02ld", sec);
+    char minutes_str[5];
+    sprintf(minutes_str, "%4ld", minutes);
+    lcd.setCursor(9,1);
+    lcd.print(minutes_str);
+    lcd.setCursor(13,1);
+    lcd.print(":");
+    lcd.setCursor(14,1);
+    lcd.print(sec_str);
+    
     // serial out
     String out;
     out += "p=";
