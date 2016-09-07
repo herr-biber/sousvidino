@@ -1,3 +1,20 @@
+// Sousvidino. Low-cost Sous vide controller using a one-wire temperature sensor and a solid state relay for heater power switching
+//
+// Author: Markus Roth <mail@rothmark.us>
+// 
+// setpoint:
+//   burger: 55: rare, 60: medium, 65: mediu well    
+//
+// PID parameters (dependent on water volume, heater power
+// 1.5l water boiler 2kw:
+//   kp = 1.0;
+//   ki = 0.03;
+//   kd = 0.0;
+// 6l water, immersion heater 1kW:
+//   kp = 30.0;
+//   ki = 0.03;
+//   kd = 0.0;
+
 #include <LiquidCrystal.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -53,20 +70,6 @@ DallasTemperature sensors(&one_wire);
 double input, output, setpoint;
 double kp, ki, kd;
 // setpoint, kp, ki, kd initialized in setup();
-// used for first beef
-//double kp = 4.0;
-//double ki = 0.1;
-//double kd = 3.0;
-
-// Wasserkocher 2kw
-//double kp = 1.0;
-//double ki = 0.03;
-//double kd = 0.0;
-
-// 6l, Tauchsieder 1kW
-//double kp = 30.0;
-//double ki = 0.03;
-//double kd = 0.0;
 
 uint8_t controlState = CONTROL_STATE_SP;
 static double * const controlValues[] = { &setpoint, &kp, &ki, &kd };
@@ -190,11 +193,10 @@ void setup() {
 //  sensors.setResolution(temp_sensor2, 12);
 
   // PID
-  // restrict max power
-//  setpoint = 58.0; // sp burger: 55: rare, 60: medium, 65: mediu well    
   readEEPROM();
   pid.SetTunings(kp, ki, kd);
   pid.SetSampleTime(5000); // ms. a little longer than normal loop time
+  // restrict max power
   pid.SetOutputLimits(0, MAX_POWER);
   pid.SetMode(AUTOMATIC);
   
@@ -311,8 +313,6 @@ void loop() {
   }
   */
   
-  
-  //output = round(output); // round output such that pid knows the a
   uint8_t p = uint8_t(round(output));
   set_power(p);
   
@@ -330,6 +330,7 @@ void loop() {
     lcd.print("OUT");
     lcd.setCursor(14,0);
     {
+    // right align output value
     char out_str[4];
     sprintf(out_str, "%2d", p*2);
     lcd.print(out_str);
