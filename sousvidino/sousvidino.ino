@@ -2,6 +2,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <PID_v1.h>
+#include <EEPROM.h>
 
 #define PIN_SSR 13 // solid state relay
 #define PIN_GND_ONEWIRE 12
@@ -50,7 +51,8 @@ DallasTemperature sensors(&one_wire);
 
 // PID
 double input, output, setpoint;
-
+double kp, ki, kd;
+// setpoint, kp, ki, kd initialized in setup();
 // used for first beef
 //double kp = 4.0;
 //double ki = 0.1;
@@ -61,14 +63,41 @@ double input, output, setpoint;
 //double ki = 0.03;
 //double kd = 0.0;
 
-double kp = 30.0;
-double ki = 0.03;
-double kd = 0.0;
+// 6l, Tauchsieder 1kW
+//double kp = 30.0;
+//double ki = 0.03;
+//double kd = 0.0;
 
 uint8_t controlState = CONTROL_STATE_SP;
 static double * const controlValues[] = { &setpoint, &kp, &ki, &kd };
 static const double controlIncrements[] = { 0.5, 0.1, 0.001, 0.1 };
 static const char*  controlNames[] = { "SP", "P  ", "I  ", "D  " };
+
+void writeEEPROM() {
+  size_t addr = 0;
+  // store sp, p, i, d in first addresses
+  EEPROM.put(addr, setpoint);
+  addr += sizeof(setpoint);
+  EEPROM.put(addr, kp);
+  addr += sizeof(kp);
+  EEPROM.put(addr, ki);
+  addr += sizeof(ki);
+  EEPROM.put(addr, kd);
+  addr += sizeof(kd);
+}
+
+void readEEPROM() {
+  size_t addr = 0;
+  // read sp, p, i, d from first addresses
+  EEPROM.get(addr, setpoint);
+  addr += sizeof(setpoint);
+  EEPROM.get(addr, kp);
+  addr += sizeof(kp);
+  EEPROM.get(addr, ki);
+  addr += sizeof(ki);
+  EEPROM.get(addr, kd);
+  addr += sizeof(kd);
+}
 
 PID pid(&input, &output, &setpoint, kp, ki, kd, DIRECT);
 
@@ -162,7 +191,9 @@ void setup() {
 
   // PID
   // restrict max power
-  setpoint = 58.0; // sp burger: 55: rare, 60: medium, 65: mediu well    
+//  setpoint = 58.0; // sp burger: 55: rare, 60: medium, 65: mediu well    
+  readEEPROM();
+  pid.SetTunings(kp, ki, kd);
   pid.SetSampleTime(5000); // ms. a little longer than normal loop time
   pid.SetOutputLimits(0, MAX_POWER);
   pid.SetMode(AUTOMATIC);
@@ -206,23 +237,26 @@ void loop() {
   if(millis() - lastButtonPressTime > ANALOG_BUTTON_MIN_PRESS_TIME_MS) {
     lastButtonPressTime = millis();
     
-    if(button_value != btnNONE) {
-      switch(button_value) {
-        case btnSELECT:
-          controlState += 1;
-          controlState %= 4;
-          break;
-        case btnUP:
-          *controlValues[controlState] += controlIncrements[controlState];
-          break;
-        case btnDOWN:
-          *controlValues[controlState] -= controlIncrements[controlState];
-          break;
-        default:
-          break;
-      }
+    switch(button_value) {
+      case btnSELECT:
+        controlState += 1;
+        controlState %= 4;
+        break;
+      case btnUP:
+        *controlValues[controlState] += controlIncrements[controlState];
+        break;
+      case btnDOWN:
+        *controlValues[controlState] -= controlIncrements[controlState];
+        break;
+      case btnLEFT:
+        readEEPROM();
+        break;
+      case btnRIGHT:
+        writeEEPROM();
+        break;
+      default:
+        break;
     }
-
   }
   
   // get temperatures
