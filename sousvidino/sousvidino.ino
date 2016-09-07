@@ -203,8 +203,10 @@ void loop() {
   last_t = millis();
 
   uint8_t button_value = read_LCD_button();
-  if(button_value != btnNONE) {
-    if(millis() - lastButtonPressTime > ANALOG_BUTTON_MIN_PRESS_TIME_MS) {
+  if(millis() - lastButtonPressTime > ANALOG_BUTTON_MIN_PRESS_TIME_MS) {
+    lastButtonPressTime = millis();
+    
+    if(button_value != btnNONE) {
       switch(button_value) {
         case btnSELECT:
           controlState += 1;
@@ -220,7 +222,7 @@ void loop() {
           break;
       }
     }
-    lastButtonPressTime = millis();
+
   }
   
   // get temperatures
