@@ -21,6 +21,8 @@
 #include <PID_v1.h>
 #include <EEPROM.h>
 
+#define SOUSVIDINO_EEPROM_VERSION 42
+
 #define PIN_SSR 13 // solid state relay
 #define PIN_GND_ONEWIRE 12
 #define PIN_VCC_ONEWIRE 11
@@ -78,7 +80,10 @@ static const char*  controlNames[] = { "SP", "P  ", "I  ", "D  " };
 
 void writeEEPROM() {
   size_t addr = 0;
-  // store sp, p, i, d in first addresses
+  // store version, sp, p, i, d in first addresses
+  uint8_t version = SOUSVIDINO_EEPROM_VERSION;
+  EEPROM.put(addr, version);
+  addr += sizeof(version);
   EEPROM.put(addr, setpoint);
   addr += sizeof(setpoint);
   EEPROM.put(addr, kp);
@@ -91,15 +96,27 @@ void writeEEPROM() {
 
 void readEEPROM() {
   size_t addr = 0;
-  // read sp, p, i, d from first addresses
-  EEPROM.get(addr, setpoint);
-  addr += sizeof(setpoint);
-  EEPROM.get(addr, kp);
-  addr += sizeof(kp);
-  EEPROM.get(addr, ki);
-  addr += sizeof(ki);
-  EEPROM.get(addr, kd);
-  addr += sizeof(kd);
+  // Check version first. Important for first-time flashing
+  uint8_t version;
+  EEPROM.get(addr, version);
+  if(version != SOUSVIDINO_EEPROM_VERSION) {
+    // set defaults
+    setpoint = 58.0;
+    kp = 30.0;
+    ki = 0.03;
+    kd = 0.0;
+  } else {
+    addr += sizeof(version);
+    // read sp, p, i, d from first addresses
+    EEPROM.get(addr, setpoint);
+    addr += sizeof(setpoint);
+    EEPROM.get(addr, kp);
+    addr += sizeof(kp);
+    EEPROM.get(addr, ki);
+    addr += sizeof(ki);
+    EEPROM.get(addr, kd);
+    addr += sizeof(kd);
+  }
 }
 
 PID pid(&input, &output, &setpoint, kp, ki, kd, DIRECT);
