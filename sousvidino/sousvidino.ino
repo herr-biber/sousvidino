@@ -331,7 +331,7 @@ void loop() {
     lcd.setCursor(14,0);
     {
     char out_str[4];
-    sprintf(out_str, "%2d", p);
+    sprintf(out_str, "%2d", p*2);
     lcd.print(out_str);
     }
 
