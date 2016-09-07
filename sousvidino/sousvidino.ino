@@ -3,7 +3,7 @@
 #include <DallasTemperature.h>
 #include <PID_v1.h>
 
-#define PIN_SSR 13
+#define PIN_SSR 13 // solid state relay
 #define PIN_GND_ONEWIRE 12
 #define PIN_VCC_ONEWIRE 11
 #define PIN_TEMP 3
