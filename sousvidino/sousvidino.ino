@@ -262,9 +262,11 @@ void loop() {
         break;
       case btnUP:
         *controlValues[controlState] += controlIncrements[controlState];
+        pid.SetTunings(kp, ki, kd);
         break;
       case btnDOWN:
         *controlValues[controlState] -= controlIncrements[controlState];
+        pid.SetTunings(kp, ki, kd);
         break;
       case btnLEFT:
         readEEPROM();
