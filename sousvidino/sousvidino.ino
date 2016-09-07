@@ -2,7 +2,6 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <PID_v1.h>
-#include <PID_AutoTune_v0.h>
 
 #define PIN_SSR 13
 #define PIN_GND 12 // for one wire
@@ -72,12 +71,6 @@ static const double controlIncrements[] = { 0.5, 0.1, 0.001, 0.1 };
 static const char*  controlNames[] = { "SP", "P  ", "I  ", "D  " };
 
 PID pid(&input, &output, &setpoint, kp, ki, kd, DIRECT);
-
-// APID auto tune
-double aTuneStep = 10, aTuneNoise = 1.0;
-int aTuneLookBack = 150;
-//PID_ATune aTune(&input, &output);
-boolean autotune = false;
 
 static const DeviceAddress temp_sensor0 = { 0x28, 0xFF, 0x24, 0x79, 0x01, 0x15, 0x02, 0x90 }; 
 static const DeviceAddress temp_sensor1 = { 0x28, 0xFF, 0x95, 0x94, 0x01, 0x15, 0x02, 0xC6 }; 
@@ -170,17 +163,9 @@ void setup() {
   // PID
   // restrict max power
   setpoint = 58.0; // sp burger: 55: rare, 60: medium, 65: mediu well    
-//  output = 10.0; // only set on autotune
   pid.SetSampleTime(5000); // ms. a little longer than normal loop time
   pid.SetOutputLimits(0, MAX_POWER);
   pid.SetMode(AUTOMATIC);
-
-  // PID auto tune
-// aTune.SetNoiseBand(aTuneNoise);
-// aTune.SetOutputStep(aTuneStep);
-//  aTune.SetLookbackSec(aTuneLookBack);
-//  aTune.SetControlType(CONTROL_TYPE_PI);
-  autotune = false;
   
   // enable global interrupts
   interrupts(); // sei
@@ -269,9 +254,6 @@ void loop() {
       double kd = serial_command.substring(3).toFloat();
       pid.SetTunings(pid.GetKp(), pid.GetKi(), kd);
     }
-    else if(serial_command.startsWith("autotune=")) {
-      autotune = serial_command.substring(9).toInt();
-    }
     lcd.setCursor(0,0);
     lcd.write(serial_command.c_str());
     delay(500);
@@ -281,19 +263,8 @@ void loop() {
   // pid
   input = t0;
 
-  if(autotune) {
-//    int is_autotune_finished = aTune.Runtime();/
-    
-//    if (is_autotune_finished) {
-//      autotune = false;
-//    }
-    // set pid with current settings, even, if not running
-//    aTune.FinishUp();/
-//    pid.SetTunings(aTune.GetKp(), aTune.GetKi(), aTune.GetKd());/
-  }
-  else {
-    pid.Compute();
-  }
+  pid.Compute();
+
 
   /*
   // relay controller
@@ -309,11 +280,6 @@ void loop() {
   uint8_t p = uint8_t(round(output));
   set_power(p);
   
-  // make sure autotune knows what output was actually taken
-  if(autotune) {
-    output = power;
-  }
-
   ++loop_it;
   loop_it %= 10;
   if(loop_it == 0) {
@@ -359,8 +325,6 @@ void loop() {
     out += pid.GetKd();
     out += ";output=";
     out += output;
-    out += ";autotune=";
-    out += autotune;
     out += ";loop_time=";
     out += t;
   
