@@ -353,7 +353,7 @@ void loop() {
     {
     // right align output value
     char out_str[4];
-    sprintf(out_str, "%2d", p*2);
+    sprintf(out_str, "%2d", p*2); // show output as percentage
     lcd.print(out_str);
     }
 
