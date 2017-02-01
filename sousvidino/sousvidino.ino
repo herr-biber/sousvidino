@@ -283,7 +283,7 @@ void loop() {
   }
   
   // get temperatures
-//  sensors.requestTemperatures(); // 766ms!/
+//  sensors.requestTemperatures(); // 766ms!
   sensors.requestTemperaturesByAddress(temp_sensor0); // 46ms
   float t0 = sensors.getTempC(temp_sensor0); // 13ms 
 //  float t1 = sensors.getTempC(temp_sensor1); // 13ms
