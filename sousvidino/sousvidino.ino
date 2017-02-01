@@ -340,6 +340,7 @@ void loop() {
   ++loop_it;
   loop_it %= 10;
   if(loop_it == 0) {
+    loop_it=0;
   
     // lcd
     lcd.setCursor(0,0);
