@@ -3,7 +3,7 @@
 // Author: Markus Roth <mail@rothmark.us>
 // 
 // setpoint:
-//   burger: 55: rare, 60: medium, 65: mediu well    
+//   burger: 55: rare, 60: medium, 65: medium well    
 //
 // PID parameters (dependent on water volume, heater power
 // 1.5l water boiler 2kw:
