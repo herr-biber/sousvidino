@@ -58,6 +58,12 @@ void loop() {
   out += last_t;
   out += "\n";
 
+  // fake changing temperature
+  t0 += 0.25;
+  if(t0 > 100.0) {
+    t0 = -4.0;
+  }
+
   // Write out on both arduino serial and software serial
   Serial.write(out.c_str());
   mySerial.write(out.c_str());
