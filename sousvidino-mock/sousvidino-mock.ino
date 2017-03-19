@@ -27,10 +27,47 @@ double kp = 30;
 double ki = 0.03;
 double kd = 0.0;
 
+// serial in buffer
+String serial_buffer = "";
+// last complete command (tailing \n)
+String serial_command = "";
 
 void loop() {
   unsigned long t = millis() - last_t;
   last_t = millis();
+
+  while (mySerial.available()) {
+    char in_char = (char) mySerial.read();
+    serial_buffer += in_char;
+    Serial.write(in_char);
+    
+    // command complete
+    if (in_char == '\n') {
+      serial_command = serial_buffer;
+      serial_buffer = "";
+    }
+  }
+
+  // serial in
+  if(serial_command.length() > 0) {
+    serial_command.trim(); // remove \n at end
+    if(serial_command.startsWith("p=")) {
+      power = serial_command.substring(2).toInt();
+    }
+    else if(serial_command.startsWith("sp=")) {
+      setpoint = serial_command.substring(3).toFloat();
+    }
+    else if(serial_command.startsWith("kp=")) {
+      kp = serial_command.substring(3).toFloat();
+    }
+    else if(serial_command.startsWith("ki=")) {
+      ki = serial_command.substring(3).toFloat();
+    }
+    else if(serial_command.startsWith("kd=")) {
+      kd = serial_command.substring(3).toFloat();
+    }
+    serial_command = ""; // reset last serial command
+  }
   
   // serial out
   String out;
@@ -65,7 +102,7 @@ void loop() {
   }
 
   // Write out on both arduino serial and software serial
-  Serial.write(out.c_str());
+  //Serial.write(out.c_str());
   mySerial.write(out.c_str());
   
   delay(77); // approximate delay with one temperature sensor
