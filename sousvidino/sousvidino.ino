@@ -245,13 +245,13 @@ ISR(TIMER1_COMPA_vect) {
 
 uint8_t loop_it = 0;
 
-int last_t = 0;
+unsigned long last_t = 0;
 
 
 // whole loop around 77ms
 void loop() {
   
-  int t = millis() - last_t;
+  unsigned long t = millis() - last_t;
   last_t = millis();
 
   uint8_t button_value = read_LCD_button();
