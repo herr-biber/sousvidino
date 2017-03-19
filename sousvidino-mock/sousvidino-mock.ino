@@ -19,8 +19,8 @@ void setup() {
 unsigned long last_t = 0;
 uint8_t power = 10;
 float t0 = 50.0;
-float t1 = 51.0;
-float t2 = 52.0;
+float t1 = -127.0;
+float t2 = -127.0;
 double output = 10.0;
 double setpoint = 60.0;
 double kp = 30;
