@@ -402,6 +402,8 @@ void loop() {
     out += output;
     out += ";loop_time=";
     out += t;
+    out += ";time=";
+    out += last_t;
   
     out += "\n";
 
