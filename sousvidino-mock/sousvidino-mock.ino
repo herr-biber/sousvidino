@@ -17,20 +17,20 @@ void setup() {
 }
 
 unsigned long last_t = 0;
+uint8_t power = 10;
+float t0 = 50.0;
+float t1 = 51.0;
+float t2 = 52.0;
+double output = 10.0;
+double setpoint = 60.0;
+double kp = 30;
+double ki = 0.03;
+double kd = 0.0;
+
 
 void loop() {
   unsigned long t = millis() - last_t;
   last_t = millis();
-  
-  uint8_t power = 10;
-  float t0 = 50.0;
-  float t1 = 51.0;
-  float t2 = 52.0;
-  double output = 10.0;
-  double setpoint = 60.0;
-  double kp = 30;
-  double ki = 0.03;
-  double kd = 0.0;
   
   // serial out
   String out;
