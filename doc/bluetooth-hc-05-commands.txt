@@ -1,0 +1,71 @@
+Press button near ENABLE when powering on (or ENABLE to 3.3V)
+Baud rate 38400, crlf
+
+For commands, see:
+http://eskimon.fr/wp-content/uploads/2014/10/commandes_AT_HC05.pdf
+
+AT
++OK
+
+AT+UART
++AT+UART=115200
+# When setting baud rate, only pin baud rate has to be set
+# Wireless bluetooth baud rate is automatically set
+
+AT+UART=115200,0,0
++UART:115200,0,0
+
+AT+NAME=sousvidino
+AT+NAME
++NAME:sousvidino
+
+AT+VERSION (Gives 2.0)
++VERSION:2.0-20100601
+
+AT+ADDR
++ADDR:98d3:31:fb2565
+
+AT+ROLE (gives 1)
++ROLE:0
+
+AT+PSWD
++PSWD:1234
+
+AT+RESET (changes to a fast flash)
+
+AT+NAME
++NAME:HC-05
+
+AT+ORGL
+
+AT+CLASS
++CLASS:1f00
+
+AT+IAC
++IAC:9e8b33
+
+AT+INQM
++INQM:1,1,48
+
+AT+CMODE
++CMOD:1
+
+AT+POLAR
++POLAR:1,1
+
+AT+SNIFF
++SNIFF:0,0,0,0
+
+AT+SENM 
++SENM:0,0
+
+AT+PMSAD=
+
+AT+MRAD
++MRAD:9c6c:15:989d6e
+Windows Phone
+
+AT+STATE
++STATE:INITIALIZED
+
+
