@@ -13,7 +13,7 @@ void setup() {
   }
 
   Serial.println("Ready to go");
-  mySerial.begin(115200);
+  mySerial.begin(38400);
 }
 
 unsigned long last_t = 0;
