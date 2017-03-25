@@ -39,6 +39,7 @@ DallasTemperature sensors(&one_wire);
 
 // bluetooth serial
 SoftwareSerial bluetoothSerial(PIN_BT_RX, PIN_BT_TX); // RX, TX
+uint8_t bluetooth_enable = LOW;
 
 // PID
 double input, output, setpoint;
@@ -97,10 +98,11 @@ uint8_t ssr_state = LOW;
 uint8_t power = 0; // 0: off, MAX_POWER: full
 
 // serial in buffer
-String serial_buffer = "";
+String serial_buffer_usb = "";
 String serial_buffer_bluetooth = "";
 // last complete command (bluetooth and USB) (tailing \n)
-String serial_command = "";
+String serial_command_usb = "";
+String serial_command_bluetooth = "";
 
 void flip_ssr_state() {
   ssr_state = !ssr_state;
@@ -170,7 +172,10 @@ void setup() {
 
   // bluetooth serial
   bluetoothSerial.begin(38400);
-  
+  pinMode(PIN_BT_ENABLE, OUTPUT);
+  digitalWrite(PIN_BT_ENABLE, LOW);
+  pinMode(PIN_BT_VCC, OUTPUT);
+  digitalWrite(PIN_BT_VCC, HIGH);
   // sensors
   sensors.begin();
   
@@ -240,16 +245,38 @@ void loop() {
     
     // command complete
     if (in_char == '\n') {
-      // not likely, that both serial_command from bluetooth and usb are present
-      serial_command = serial_buffer_bluetooth;
+      // not likely, that both serial_command_usb from bluetooth and usb are present
+      serial_buffer_bluetooth.trim();
+      serial_command_bluetooth = serial_buffer_bluetooth;
       serial_buffer_bluetooth = "";
     }
   }
 
-  // serial command from either bluetooth or USB complente
-  if(serial_command.length() > 0) {
-    serial_command.trim(); // remove \n at end
-    if(serial_command.startsWith("p=")) {
+  String serial_command;
+  if (serial_command_bluetooth.length() > 0) {
+    if (bluetooth_enable) {
+      // forward bluetooth serial to usb serial
+      Serial.print(serial_command_bluetooth + "\n");
+    } else {
+      serial_command = serial_command_bluetooth;
+    }
+    serial_command_bluetooth = "";
+  }
+
+  if (serial_command_usb.length() > 0) {
+    if (bluetooth_enable) {
+      // forward usb serial to bluetooth serial
+      Serial.print(serial_command_usb + "\n"); // echo
+      bluetoothSerial.print(serial_command_usb + "\r\n");
+    }
+    // always use usb serial commands to allow for setting bluetooth_enable
+    serial_command = serial_command_usb;
+    serial_command_usb = "";
+  }
+
+  // serial command from either bluetooth or USB complete
+  if (serial_command.length() > 0) {
+    if (serial_command.startsWith("p=")) {
       uint8_t p = serial_command.substring(2).toInt();
       set_power(p);
     }
@@ -268,7 +295,20 @@ void loop() {
       double kd = serial_command.substring(3).toFloat();
       pid.SetTunings(pid.GetKp(), pid.GetKi(), kd);
     }
-    // not likely, that both serial_command from bluetooth and usb are present
+    else if (serial_command.startsWith("bt_en=")) {
+      bluetooth_enable = serial_command.substring(6).toInt() > 0 ? HIGH : LOW;
+      if (bluetooth_enable) {
+        // restart bluetooth module in AT mode
+        digitalWrite(PIN_BT_ENABLE, HIGH);
+      } else {
+        digitalWrite(PIN_BT_ENABLE, LOW);
+      }
+      // restart bluetooth module
+      digitalWrite(PIN_BT_VCC, LOW);
+      delay(10);
+      digitalWrite(PIN_BT_VCC, HIGH);
+    }
+
     serial_command = ""; // reset last serial command
   }
 
@@ -319,11 +359,15 @@ void loop() {
     out += t;
     out += ";time=";
     out += last_t;
-  
+    out += ";bt_en=";
+    out += bluetooth_enable;
+
     out += "\n";
 
-    Serial.print(out.c_str());
-    bluetoothSerial.write(out.c_str());
+    if (!bluetooth_enable) {
+      Serial.print(out);
+      bluetoothSerial.print(out);
+    } 
   }
 }
 
@@ -331,13 +375,13 @@ void loop() {
 void serialEvent() {
   while (Serial.available()) {
     char in_char = (char) Serial.read();
-    serial_buffer += in_char;
-    
+    serial_buffer_usb += in_char;
+
     // command complete
     if (in_char == '\n') {
-      // not likely, that both serial_command from bluetooth and usb are present
-      serial_command = serial_buffer;
-      serial_buffer = "";
+      serial_buffer_usb.trim();
+      serial_command_usb = serial_buffer_usb;
+      serial_buffer_usb = "";
     }
   }
 }
