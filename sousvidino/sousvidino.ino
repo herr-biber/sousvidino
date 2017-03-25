@@ -5,11 +5,11 @@
 // setpoint:
 //   burger: 55: rare, 60: medium, 65: medium well    
 //
-// PID parameters (dependent on water volume, heater power
+// PID parameters (dependent on water volume, heater power)
 // 1.5l water boiler 2kw:
 //   kp = 1.0;
 //   ki = 0.03;
-//   kd = 0.0;
+//   kd = 0.0; 
 // 6l water, immersion heater 1kW:
 //   kp = 30.0;
 //   ki = 0.03;
