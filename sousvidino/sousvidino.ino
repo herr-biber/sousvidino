@@ -182,7 +182,7 @@ void setup() {
   sensors.begin();
   
   // set the resolution to 12 bit
-  sensors.setResolution(temp_sensor0, 12);
+  sensors.setResolution(12);
 //  sensors.setResolution(temp_sensor1, 12);
 //  sensors.setResolution(temp_sensor2, 12);
 
