@@ -15,68 +15,35 @@
 //   ki = 0.03;
 //   kd = 0.0;
 
-#include <LiquidCrystal.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <PID_v1.h>
 #include <EEPROM.h>
+#include <SoftwareSerial.h>
 
 #define SOUSVIDINO_EEPROM_VERSION 42
 
-#define PIN_SSR 13 // solid state relay
-#define PIN_GND_ONEWIRE 12
-#define PIN_VCC_ONEWIRE 11
-#define PIN_TEMP 3
 #define MAX_POWER 50 // has to be smaller than 65535 cycles / 1250 prescaled timer cycles per ac period
 
-// for display/control (second row)
-#define CONTROL_STATE_SP 0
-#define CONTROL_STATE_P 1
-#define CONTROL_STATE_I 2
-#define CONTROL_STATE_D 3
+#define PIN_BT_RX        2
+#define PIN_BT_TX        3
+#define PIN_BT_VCC       4
+#define PIN_BT_ENABLE    5
+#define PIN_ONEWIRE_TEMP 6
+#define PIN_ONEWIRE_VCC  7
+#define PIN_ONEWIRE_GND  8
+#define PIN_SSR          13 // solid state relay
 
-// button
-#define ANALOG_BUTTON_MIN_PRESS_TIME_MS 200
-#define ANALOG_BUTTON_PIN 0 // from lcd keypad shield
-int lastButtonPressTime = 0;
-
-#define btnRIGHT  0
-#define btnUP     1
-#define btnDOWN   2
-#define btnLEFT   3
-#define btnSELECT 4
-#define btnNONE   5
-
-// from https://www.dfrobot.com/wiki/index.php/Arduino_LCD_KeyPad_Shield_(SKU:_DFR0009)
-uint8_t read_LCD_button()
-{
- int adc_key_in = analogRead(ANALOG_BUTTON_PIN);      // read the value from the sensor 
-
- if (adc_key_in > 1000) return btnNONE;
- // For V1.1 us this threshold
- if (adc_key_in < 50)   return btnRIGHT;  
- if (adc_key_in < 250)  return btnUP; 
- if (adc_key_in < 450)  return btnDOWN; 
- if (adc_key_in < 650)  return btnLEFT; 
- if (adc_key_in < 850)  return btnSELECT;  
-
- return btnNONE;  // when all others fail, return this...
-}
-
-
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7);   // select the pins used on the LCD panel
-OneWire one_wire(PIN_TEMP);
+OneWire one_wire(PIN_ONEWIRE_TEMP);
 DallasTemperature sensors(&one_wire);
+
+// bluetooth serial
+SoftwareSerial bluetoothSerial(PIN_BT_RX, PIN_BT_TX); // RX, TX
 
 // PID
 double input, output, setpoint;
 double kp, ki, kd;
 // setpoint, kp, ki, kd initialized in setup();
-
-uint8_t controlState = CONTROL_STATE_SP;
-static double * const controlValues[] = { &setpoint, &kp, &ki, &kd };
-static const double controlIncrements[] = { 0.5, 0.1, 0.001, 0.1 };
-static const char*  controlNames[] = { "SP", "P  ", "I  ", "D  " };
 
 void writeEEPROM() {
   size_t addr = 0;
@@ -131,7 +98,8 @@ uint8_t power = 0; // 0: off, MAX_POWER: full
 
 // serial in buffer
 String serial_buffer = "";
-// last complete command (tailing \n)
+String serial_buffer_bluetooth = "";
+// last complete command (bluetooth and USB) (tailing \n)
 String serial_command = "";
 
 void flip_ssr_state() {
@@ -167,15 +135,8 @@ void set_power(uint8_t p) {
 
 void setup() {
 
-  
   // disable global interrupts
   noInterrupts(); // cli()
-
-  // GND and VCC for one wire temp sensor
-  pinMode(PIN_GND_ONEWIRE, OUTPUT);
-  digitalWrite(PIN_GND_ONEWIRE, LOW);
-  pinMode(PIN_VCC_ONEWIRE, OUTPUT);
-  digitalWrite(PIN_VCC_ONEWIRE, HIGH);
 
   // set up Timer1
   TIMSK1 = 0x02;  // enable comparator A interrupt
@@ -190,19 +151,26 @@ void setup() {
   pinMode(PIN_SSR, OUTPUT);
   digitalWrite(PIN_SSR, ssr_state);
 
+  // convenience for temperature sensors
+  pinMode(PIN_ONEWIRE_VCC, OUTPUT);
+  pinMode(PIN_ONEWIRE_GND, OUTPUT);
+  digitalWrite(PIN_ONEWIRE_VCC, HIGH);
+  digitalWrite(PIN_ONEWIRE_GND, LOW);
+
+
   // power
   set_power(0);
     
-  // LCD
-  lcd.begin(16, 2);
-  lcd.clear();
-
   // serial
-  Serial.begin(115200);
+  Serial.begin(38400);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
+
+  // bluetooth serial
+  bluetoothSerial.begin(38400);
+  
   // sensors
   sensors.begin();
   
@@ -253,45 +221,32 @@ void loop() {
   
   unsigned long t = millis() - last_t;
   last_t = millis();
-
-  uint8_t button_value = read_LCD_button();
-  if(millis() - lastButtonPressTime > ANALOG_BUTTON_MIN_PRESS_TIME_MS) {
-    lastButtonPressTime = millis();
-    
-    switch(button_value) {
-      case btnSELECT:
-        controlState += 1;
-        controlState %= 4;
-        break;
-      case btnUP:
-        *controlValues[controlState] += controlIncrements[controlState];
-        pid.SetTunings(kp, ki, kd);
-        break;
-      case btnDOWN:
-        *controlValues[controlState] -= controlIncrements[controlState];
-        pid.SetTunings(kp, ki, kd);
-        break;
-      case btnLEFT:
-        readEEPROM();
-        break;
-      case btnRIGHT:
-        writeEEPROM();
-        break;
-      default:
-        break;
-    }
-  }
   
   // get temperatures
 //  sensors.requestTemperatures(); // 766ms!
   sensors.requestTemperaturesByAddress(temp_sensor0); // 46ms
+  sensors.requestTemperaturesByAddress(temp_sensor1); // 46ms
+  sensors.requestTemperaturesByAddress(temp_sensor2); // 46ms
   float t0 = sensors.getTempC(temp_sensor0); // 13ms 
-//  float t1 = sensors.getTempC(temp_sensor1); // 13ms
-//  float t2 = sensors.getTempC(temp_sensor2); // 13ms
-  float t1 = -127.0;
-  float t2 = -127.0;
+  float t1 = sensors.getTempC(temp_sensor1); // 13ms
+  float t2 = sensors.getTempC(temp_sensor2); // 13ms
+//  float t1 = -127.0;
+//  float t2 = -127.0;
 
-  // serial in
+  // Accumulate bluetooth serial command
+  while (bluetoothSerial.available()) {
+    char in_char = (char) bluetoothSerial.read();
+    serial_buffer_bluetooth += in_char;
+    
+    // command complete
+    if (in_char == '\n') {
+      // not likely, that both serial_command from bluetooth and usb are present
+      serial_command = serial_buffer_bluetooth;
+      serial_buffer_bluetooth = "";
+    }
+  }
+
+  // serial command from either bluetooth or USB complente
   if(serial_command.length() > 0) {
     serial_command.trim(); // remove \n at end
     if(serial_command.startsWith("p=")) {
@@ -313,9 +268,7 @@ void loop() {
       double kd = serial_command.substring(3).toFloat();
       pid.SetTunings(pid.GetKp(), pid.GetKi(), kd);
     }
-    lcd.setCursor(0,0);
-    lcd.write(serial_command.c_str());
-    delay(500);
+    // not likely, that both serial_command from bluetooth and usb are present
     serial_command = ""; // reset last serial command
   }
 
@@ -341,45 +294,7 @@ void loop() {
   loop_it %= 10;
   if(loop_it == 0) {
     loop_it=0;
-  
-    // lcd
-    lcd.setCursor(0,0);
-    lcd.print("PV ");
-    lcd.setCursor(3,0);
-    lcd.print(t0, 2);
-
-    lcd.setCursor(10,0);
-    lcd.print("OUT");
-    lcd.setCursor(14,0);
-    {
-    // right align output value
-    char out_str[4];
-    sprintf(out_str, "%2d", p*2); // show output as percentage
-    lcd.print(out_str);
-    }
-
-    // second line 
-    lcd.setCursor(0,1);
-    lcd.print(controlNames[controlState]);
-    lcd.setCursor(3,1);
-    lcd.print(*controlValues[controlState], 2);
-
-    // time
-    unsigned long sec = millis() / 1000;
-    unsigned long minutes = sec / 60;
-    sec %= 60;
-
-    char sec_str[3];
-    sprintf(sec_str, "%02ld", sec);
-    char minutes_str[5];
-    sprintf(minutes_str, "%4ld", minutes);
-    lcd.setCursor(9,1);
-    lcd.print(minutes_str);
-    lcd.setCursor(13,1);
-    lcd.print(":");
-    lcd.setCursor(14,1);
-    lcd.print(sec_str);
-    
+      
     // serial out
     String out;
     out += "p=";
@@ -408,9 +323,11 @@ void loop() {
     out += "\n";
 
     Serial.print(out.c_str());
+    bluetoothSerial.write(out.c_str());
   }
 }
 
+// USB serial
 void serialEvent() {
   while (Serial.available()) {
     char in_char = (char) Serial.read();
@@ -418,6 +335,7 @@ void serialEvent() {
     
     // command complete
     if (in_char == '\n') {
+      // not likely, that both serial_command from bluetooth and usb are present
       serial_command = serial_buffer;
       serial_buffer = "";
     }
