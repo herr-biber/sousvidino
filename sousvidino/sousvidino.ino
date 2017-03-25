@@ -25,13 +25,14 @@
 
 #define MAX_POWER 50 // has to be smaller than 65535 cycles / 1250 prescaled timer cycles per ac period
 
-#define PIN_BT_RX        2
-#define PIN_BT_TX        3
-#define PIN_BT_VCC       4
-#define PIN_BT_ENABLE    5
-#define PIN_ONEWIRE_TEMP 6
-#define PIN_ONEWIRE_VCC  7
-#define PIN_ONEWIRE_GND  8
+#define PIN_BT_TX        2
+#define PIN_BT_RX        3
+#define PIN_BT_GND       4
+#define PIN_BT_VCC       5
+#define PIN_BT_ENABLE    6
+#define PIN_ONEWIRE_TEMP 7
+#define PIN_ONEWIRE_VCC  8
+#define PIN_ONEWIRE_GND  9
 #define PIN_SSR          13 // solid state relay
 
 OneWire one_wire(PIN_ONEWIRE_TEMP);
