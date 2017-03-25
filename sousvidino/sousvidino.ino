@@ -307,6 +307,7 @@ void loop() {
       delay(10);
       digitalWrite(PIN_BT_VCC, HIGH);
     }
+    // TODO add eeprom_save command
 
     serial_command = ""; // reset last serial command
   }
