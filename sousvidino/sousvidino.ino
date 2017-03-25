@@ -217,8 +217,6 @@ ISR(TIMER1_COMPA_vect) {
   TCCR1B = 0x04;
 }
 
-uint8_t loop_it = 0;
-
 unsigned long last_t = 0;
 
 
@@ -330,12 +328,8 @@ void loop() {
   
   uint8_t p = uint8_t(round(output));
   set_power(p);
-  
-  ++loop_it;
-  loop_it %= 10;
-  if(loop_it == 0) {
-    loop_it=0;
-      
+
+  {      
     // serial out
     String out;
     out += "p=";
@@ -369,6 +363,12 @@ void loop() {
       Serial.print(out);
       bluetoothSerial.print(out);
     } 
+  }
+
+  // delay to 100ms total loop time
+  long delay_time = 100 - (millis() - last_t);
+  if(delay_time > 0) {
+    delay(delay_time);
   }
 }
 
