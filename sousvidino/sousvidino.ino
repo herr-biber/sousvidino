@@ -176,7 +176,9 @@ void setup() {
   bluetoothSerial.begin(38400);
   pinMode(PIN_BT_ENABLE, OUTPUT);
   digitalWrite(PIN_BT_ENABLE, LOW);
-  pinMode(PIN_BT_VCC, OUTPUT);
+  pinMode(PIN_BT_GND, OUTPUT); // convenience, not for arduino nano
+  digitalWrite(PIN_BT_GND, LOW);
+  pinMode(PIN_BT_VCC, OUTPUT); // convenience, not for arduino nano
   digitalWrite(PIN_BT_VCC, HIGH);
   // sensors
   sensors.begin();
