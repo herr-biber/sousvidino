@@ -1,3 +1,9 @@
+Use these to configure the Arduino:
+AT+NAME=sousvidino
+AT+UART=38400,0,0
+AT+PSWD=0000
+
+
 Press button near ENABLE when powering on (or ENABLE to 3.3V)
 Baud rate 38400, crlf
 
