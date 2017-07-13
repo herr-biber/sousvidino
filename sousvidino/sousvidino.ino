@@ -93,7 +93,6 @@ PID pid(&input, &output, &setpoint, kp, ki, kd, DIRECT);
 // TODO put into eeprom
 static const DeviceAddress temp_sensor0 = { 0x28, 0xFF, 0x24, 0x79, 0x01, 0x15, 0x02, 0x90 }; 
 static const DeviceAddress temp_sensor1 = { 0x28, 0xFF, 0x95, 0x94, 0x01, 0x15, 0x02, 0xC6 }; 
-static const DeviceAddress temp_sensor2 = { 0x28, 0xFF, 0xE7, 0x57, 0x01, 0x15, 0x02, 0x99 }; 
 
 // output
 uint8_t ssr_state = LOW;
@@ -186,7 +185,6 @@ void setup() {
   // set the resolution to 12 bit
   sensors.setResolution(12);
 //  sensors.setResolution(temp_sensor1, 12);
-//  sensors.setResolution(temp_sensor2, 12);
 
   // PID
   readEEPROM();
@@ -233,10 +231,8 @@ void loop() {
 //  sensors.requestTemperatures(); // 766ms!
   sensors.requestTemperaturesByAddress(temp_sensor0); // 46ms
   sensors.requestTemperaturesByAddress(temp_sensor1); // 46ms
-  sensors.requestTemperaturesByAddress(temp_sensor2); // 46ms
   float t0 = sensors.getTempC(temp_sensor0); // 13ms 
   float t1 = sensors.getTempC(temp_sensor1); // 13ms
-  float t2 = sensors.getTempC(temp_sensor2); // 13ms
 //  float t1 = -127.0;
 //  float t2 = -127.0;
 
@@ -342,8 +338,6 @@ void loop() {
     out += t0;
     out += ";t1=";
     out += t1;
-    out += ";t2=";
-    out += t2;
     out += ";sp=";
     out += setpoint;
     out += ";kp=";
