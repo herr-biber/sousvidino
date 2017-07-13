@@ -51,6 +51,24 @@ uint8_t n_sensors = 0;
 static DeviceAddress temp_sensor0 = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }; 
 static DeviceAddress temp_sensor1 = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }; 
 
+void resetTempSensors() {
+  memset(temp_sensor0, 0, 8);
+  memset(temp_sensor1, 0, 8);
+}
+
+void searchTempSensors() {
+  DeviceAddress addr;
+  if(one_wire.search(temp_sensor0)) {
+    ++n_sensors;
+//    if(OneWire::crc8(temp_sensor0, 7) != addr[7]) { }
+  }
+  if(one_wire.search(temp_sensor1)) {
+//    if(OneWire::crc8(temp_sensor1, 7) != addr[7]) { }
+    ++n_sensors;
+  }
+  one_wire.reset_search();
+}
+
 void writeEEPROM() {
   size_t addr = 0;
   // store version, sp, p, i, d in first addresses
@@ -86,8 +104,8 @@ void readEEPROM() {
     kp = 30.0;
     ki = 0.03;
     kd = 0.0;
-    memset(temp_sensor0, 0, 8);
-    memset(temp_sensor1, 0, 8);
+    resetTempSensors();
+
   } else {
     addr += sizeof(version);
     // read sp, p, i, d from first addresses
@@ -216,16 +234,7 @@ void setup() {
   // Onewire discovery, if none saved
 //  if(temp_sensor0[0] == 0) 
   {
-    DeviceAddress addr;
-    if(one_wire.search(temp_sensor0)) {
-      ++n_sensors;
-  //    if(OneWire::crc8(temp_sensor0, 7) != addr[7]) { }
-    }
-    if(one_wire.search(temp_sensor1)) {
-  //    if(OneWire::crc8(temp_sensor1, 7) != addr[7]) { }
-      ++n_sensors;
-    }
-    one_wire.reset_search();
+    searchTempSensors();
     writeEEPROM();
   }
   
