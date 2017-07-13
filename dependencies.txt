@@ -1,3 +1,8 @@
-MAX31590 DallasTemperature
-MAX31590 OneWire
-PID
+Use Arduino
+    ->Sketch
+    ->Include Libraries
+    ->Manage Libraries
+to install the following libraries:
+* MAX31850_DallasTemp (1.0.0)
+* MAX31850_OneWire (1.0.0)
+* PID (1.2.0)
