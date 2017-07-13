@@ -21,7 +21,7 @@
 #include <EEPROM.h>
 #include <SoftwareSerial.h>
 
-#define SOUSVIDINO_EEPROM_VERSION 42
+#define SOUSVIDINO_EEPROM_VERSION 43
 
 #define MAX_POWER 50 // has to be smaller than 65535 cycles / 1250 prescaled timer cycles per ac period
 
@@ -65,6 +65,14 @@ void writeEEPROM() {
   addr += sizeof(ki);
   EEPROM.put(addr, kd);
   addr += sizeof(kd);
+  for(size_t i=0; i<8; ++i) {
+    EEPROM.put(addr, temp_sensor0[i]);
+    addr += sizeof(temp_sensor0[i]);
+  }
+  for(size_t i=0; i<8; ++i) {
+    EEPROM.put(addr, temp_sensor1[i]);
+    addr += sizeof(temp_sensor1[i]);
+  }
 }
 
 void readEEPROM() {
@@ -218,6 +226,7 @@ void setup() {
       ++n_sensors;
     }
     one_wire.reset_search();
+    writeEEPROM();
   }
   
   // enable global interrupts
