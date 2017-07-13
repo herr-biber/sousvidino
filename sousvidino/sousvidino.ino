@@ -47,6 +47,10 @@ double input, output, setpoint;
 double kp, ki, kd;
 // setpoint, kp, ki, kd initialized in setup();
 
+uint8_t n_sensors = 0;
+static DeviceAddress temp_sensor0 = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }; 
+static DeviceAddress temp_sensor1 = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }; 
+
 void writeEEPROM() {
   size_t addr = 0;
   // store version, sp, p, i, d in first addresses
@@ -74,6 +78,8 @@ void readEEPROM() {
     kp = 30.0;
     ki = 0.03;
     kd = 0.0;
+    memset(temp_sensor0, 0, 8);
+    memset(temp_sensor1, 0, 8);
   } else {
     addr += sizeof(version);
     // read sp, p, i, d from first addresses
@@ -85,14 +91,18 @@ void readEEPROM() {
     addr += sizeof(ki);
     EEPROM.get(addr, kd);
     addr += sizeof(kd);
+    for(size_t i=0; i<8; ++i) {
+      EEPROM.get(addr, temp_sensor0[i]);
+      addr += sizeof(temp_sensor0[i]);
+    }
+    for(size_t i=0; i<8; ++i) {
+      EEPROM.get(addr, temp_sensor1[i]);
+      addr += sizeof(temp_sensor1[i]);
+    }
   }
 }
 
 PID pid(&input, &output, &setpoint, kp, ki, kd, DIRECT);
-
-// TODO put into eeprom
-static const DeviceAddress temp_sensor0 = { 0x28, 0xFF, 0x24, 0x79, 0x01, 0x15, 0x02, 0x90 }; 
-static const DeviceAddress temp_sensor1 = { 0x28, 0xFF, 0x95, 0x94, 0x01, 0x15, 0x02, 0xC6 }; 
 
 // output
 uint8_t ssr_state = LOW;
@@ -179,12 +189,12 @@ void setup() {
   digitalWrite(PIN_BT_GND, LOW);
   pinMode(PIN_BT_VCC, OUTPUT); // convenience, not for arduino nano
   digitalWrite(PIN_BT_VCC, HIGH);
+  
   // sensors
   sensors.begin();
   
   // set the resolution to 12 bit
   sensors.setResolution(12);
-//  sensors.setResolution(temp_sensor1, 12);
 
   // PID
   readEEPROM();
@@ -193,6 +203,22 @@ void setup() {
   // restrict max power
   pid.SetOutputLimits(0, MAX_POWER);
   pid.SetMode(AUTOMATIC);
+
+
+  // Onewire discovery, if none saved
+//  if(temp_sensor0[0] == 0) 
+  {
+    DeviceAddress addr;
+    if(one_wire.search(temp_sensor0)) {
+      ++n_sensors;
+  //    if(OneWire::crc8(temp_sensor0, 7) != addr[7]) { }
+    }
+    if(one_wire.search(temp_sensor1)) {
+  //    if(OneWire::crc8(temp_sensor1, 7) != addr[7]) { }
+      ++n_sensors;
+    }
+    one_wire.reset_search();
+  }
   
   // enable global interrupts
   interrupts(); // sei
@@ -233,8 +259,6 @@ void loop() {
   sensors.requestTemperaturesByAddress(temp_sensor1); // 46ms
   float t0 = sensors.getTempC(temp_sensor0); // 13ms 
   float t1 = sensors.getTempC(temp_sensor1); // 13ms
-//  float t1 = -127.0;
-//  float t2 = -127.0;
 
   // Accumulate bluetooth serial command
   while (bluetoothSerial.available()) {
@@ -384,3 +408,4 @@ void serialEvent() {
     }
   }
 }
+
