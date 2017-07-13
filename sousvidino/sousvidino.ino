@@ -379,6 +379,23 @@ void loop() {
     out += ";bt_en=";
     out += bluetooth_enable;
 
+    out += ";temp_sensor0=";
+    out += temp_sensor0[0];
+    for(size_t i=1; i<8; ++i) {
+      out += ",";
+      out += temp_sensor0[i];
+    }
+
+    out += ";temp_sensor1=";
+    out += temp_sensor1[0];
+    for(size_t i=1; i<8; ++i) {
+      out += ",";
+      out += temp_sensor1[i];
+    }
+
+    out += ";n_sensors=";
+    out += n_sensors;
+
     out += "\n";
 
     if (!bluetooth_enable) {
