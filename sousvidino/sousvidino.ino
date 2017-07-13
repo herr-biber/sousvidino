@@ -57,6 +57,7 @@ void resetTempSensors() {
 }
 
 void searchTempSensors() {
+  resetTempSensors();
   DeviceAddress addr;
   if(one_wire.search(temp_sensor0)) {
     ++n_sensors;
