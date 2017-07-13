@@ -30,9 +30,9 @@
 #define PIN_BT_GND       4
 #define PIN_BT_VCC       5
 #define PIN_BT_ENABLE    6
-#define PIN_ONEWIRE_TEMP 7
-#define PIN_ONEWIRE_VCC  8
-#define PIN_ONEWIRE_GND  9
+#define PIN_ONEWIRE_TEMP 7  // yellow
+#define PIN_ONEWIRE_VCC  8  // red
+#define PIN_ONEWIRE_GND  9  // black
 #define PIN_SSR          13 // solid state relay
 
 OneWire one_wire(PIN_ONEWIRE_TEMP);
