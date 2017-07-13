@@ -351,7 +351,6 @@ void loop() {
 
   pid.Compute();
 
-
   /*
   // relay controller
   if(input < setpoint) {
@@ -362,6 +361,12 @@ void loop() {
   */
   
   uint8_t p = uint8_t(round(output));
+
+  // disable output, if no temperature sensor is connected
+  if (t0 == -127.0) {
+    p = 0;
+  }
+  
   set_power(p);
 
   {      
