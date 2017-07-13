@@ -1,0 +1,17 @@
+start arduino ide
+tools > serial monitor
+set baud rate 38400 (bottom right)
+set line ending to newline
+
+# setup with bluetooth module
+# enter bluetooth setup mode
+bt_en=1
+AT # answer OK
+# set name
+AT+NAME=sousvidino
+# set baud rate for arduino<>hc-05 serial communication
+AT+UART=38400,0,0
+# set bluetooth password to 0000
+AT+PSWD=0000
+# exit bluetooth setup mode
+bt_en=0
