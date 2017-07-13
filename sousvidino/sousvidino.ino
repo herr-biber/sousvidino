@@ -68,6 +68,8 @@ void searchTempSensors() {
     ++n_sensors;
   }
   one_wire.reset_search();
+
+  sensors.setResolution(12);
 }
 
 void writeEEPROM() {
@@ -220,9 +222,6 @@ void setup() {
   // sensors
   sensors.begin();
   
-  // set the resolution to 12 bit
-  sensors.setResolution(12);
-
   // PID
   readEEPROM();
   pid.SetTunings(kp, ki, kd);
