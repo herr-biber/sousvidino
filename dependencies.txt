@@ -3,6 +3,6 @@ Use Arduino
     ->Include Libraries
     ->Manage Libraries
 to install the following libraries:
-* MAX31850_DallasTemp (1.0.0)
-* MAX31850_OneWire (1.0.0)
+* DallasTemperature (3.7.6) (not MAX31850_DallasTemp, since slow read out)
+* OneWire (2.3.2) (not MAX31850_OneWire)
 * PID (1.2.0)
